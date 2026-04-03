@@ -273,6 +273,33 @@
 // });
 
 
+// const express = require("express");
+// const cors = require("cors");
+// const dotenv = require("dotenv");
+// const mongoose = require("mongoose");
+
+// dotenv.config();
+// const app = express();
+
+// app.use(cors());
+// app.use(express.json());
+
+// mongoose.connect(process.env.MONGO_URI)
+//   .then(() => console.log("✅ MongoDB Connected"))
+//   .catch(err => console.log(err));
+
+// app.use("/api/contact", require("./routes/contactRoutes"));
+// app.use("/api/admin", require("./routes/adminRoutes"));
+
+// app.get("/", (req, res) => {
+//   res.send("HAM Backend Running ✅");
+// });
+
+// app.listen(process.env.PORT, () => {
+//   console.log(`🚀 Server running on http://localhost:${process.env.PORT}`);
+// });
+
+
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -281,20 +308,67 @@ const mongoose = require("mongoose");
 dotenv.config();
 const app = express();
 
-app.use(cors());
+// Middleware
+app.use(cors({
+  origin: [
+    'https://hamsoftwaresolution-frontend-1.onrender.com',
+    'http://localhost:3000'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
+// MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.log(err));
+  .then(() => console.log("✅ MongoDB Connected - cluster0.p7bjq2p"))
+  .catch(err => console.error("❌ MongoDB Error:", err));
 
+// Routes
 app.use("/api/contact", require("./routes/contactRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 
-app.get("/", (req, res) => {
-  res.send("HAM Backend Running ✅");
+// 🟢 Health Check API
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'HAM Backend Live! 🚀',
+    mongodb: mongoose.connection.readyState === 1 ? 'Connected ✅' : 'Disconnected ❌',
+    routes: ['/api/health', '/api/contact', '/api/admin'],
+    frontend: 'https://hamsoftwaresolution-frontend-1.onrender.com'
+  });
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${process.env.PORT}`);
+// 🟢 Test WhatsApp Lead (Temporary)
+app.post('/api/send-whatsapp', async (req, res) => {
+  try {
+    const { phone, message } = req.body;
+    console.log(`📱 WhatsApp Lead: ${phone} - ${message}`);
+    
+    res.json({
+      success: true,
+      message: 'Lead received! Contact route mein save hoga',
+      phone
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 🟢 Root
+app.get("/", (req, res) => {
+  res.json({
+    message: "HAM Backend Running ✅",
+    apis: {
+      health: '/api/health',
+      whatsapp: '/api/send-whatsapp',
+      contact: '/api/contact',
+      admin: '/api/admin'
+    },
+    frontend: 'https://hamsoftwaresolution-frontend-1.onrender.com'
+  });
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📱 Frontend: https://hamsoftwaresolution-frontend-1.onrender.com`);
 });

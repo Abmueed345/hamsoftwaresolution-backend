@@ -374,10 +374,147 @@
 // });
 
 
+// const express = require("express");
+// const cors = require("cors");
+// const dotenv = require("dotenv");
+// const mongoose = require("mongoose");
+
+// dotenv.config();
+// const app = express();
+
+// // 🔥 PERFECT CORS CONFIG
+// app.use(cors({
+//   origin: [
+//     'https://hamsoftwaresolution-frontend-1.onrender.com',
+//     'http://localhost:3000',
+//     '*'
+//   ],
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE']
+// }));
+
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+
+// // MongoDB Connection
+// mongoose.connect(process.env.MONGO_URI)
+//   .then(() => console.log("✅ MongoDB Connected - cluster0.p7bjq2p"))
+//   .catch(err => console.error("❌ MongoDB Error:", err));
+
+// // 🔥 DIRECT ROUTES (No separate files needed)
+// app.post('/api/contact', (req, res) => {
+//   try {
+//     const { name, email, message, phone } = req.body;
+//     console.log('📧 CONTACT FORM:', { name, email, message, phone });
+    
+//     res.json({
+//       success: true,
+//       message: '✅ Message sent to admin successfully!',
+//       data: { name, email, phone }
+//     });
+//   } catch (error) {
+//     console.error('Contact Error:', error);
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
+
+// app.post('/api/admin/login', (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+//     console.log('🔐 Admin Login:', email);
+    
+//     if (email === process.env.ADMIN_EMAIL && 
+//         password === process.env.ADMIN_PASSWORD) {
+//       res.json({
+//         success: true,
+//         message: '🎉 Admin Login Successful!',
+//         token: 'ham-admin-jwt-2024',
+//         admin: true,
+//         dashboard: '/admin-dashboard.html'
+//       });
+//     } else {
+//       res.status(401).json({
+//         success: false,
+//         message: '❌ Invalid credentials'
+//       });
+//     }
+//   } catch (error) {
+//     res.status(500).json({ success: false, error: 'Login server error' });
+//   }
+// });
+
+// // 🟢 Health Check API
+// app.get('/api/health', (req, res) => {
+//   res.json({
+//     status: 'HAM Backend Live! 🚀',
+//     mongodb: mongoose.connection.readyState === 1 ? 'Connected ✅' : 'Disconnected ❌',
+//     apis: {
+//       health: 'GET /api/health ✅',
+//       contact: 'POST /api/contact ✅', 
+//       login: 'POST /api/admin/login ✅'
+//     },
+//     frontend: 'https://hamsoftwaresolution-frontend-1.onrender.com'
+//   });
+// });
+
+// // 🟢 WhatsApp Lead
+// app.post('/api/send-whatsapp', async (req, res) => {
+//   try {
+//     const { phone, message } = req.body;
+//     console.log(`📱 WhatsApp Lead: ${phone} - ${message}`);
+    
+//     res.json({
+//       success: true,
+//       message: '✅ Lead received!',
+//       phone
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
+
+// // 🟢 Root Route
+// app.get("/", (req, res) => {
+//   res.json({
+//     message: "HAM Backend Running ✅",
+//     apis: {
+//       health: '/api/health',
+//       contact: '/api/contact (POST)',
+//       login: '/api/admin/login (POST)',
+//       whatsapp: '/api/send-whatsapp (POST)'
+//     },
+//     admin: {
+//       email: process.env.ADMIN_EMAIL,
+//       login: '/api/admin/login'
+//     }
+//   });
+// });
+
+// // 🟢 Favicon Fix
+// app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+// // 🟢 404 Handler
+// app.use('*', (req, res) => {
+//   res.status(404).json({ 
+//     error: 'API not found', 
+//     available: ['/api/health', '/api/contact', '/api/admin/login'] 
+//   });
+// });
+
+// const PORT = process.env.PORT || 5000;
+// app.listen(PORT, () => {
+//   console.log(`🚀 Server running: https://hamsoftwaresolution-backend.onrender.com:${PORT}`);
+//   console.log(`✅ MongoDB: Connected`);
+//   console.log(`✅ Admin: ${process.env.ADMIN_EMAIL}`);
+//   console.log(`📱 Frontend: https://hamsoftwaresolution-frontend-1.onrender.com`);
+// });
+
+
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");  // 🔥 EMAIL LIBRARY
 
 dotenv.config();
 const app = express();
@@ -396,32 +533,70 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected - cluster0.p7bjq2p"))
-  .catch(err => console.error("❌ MongoDB Error:", err));
-
-// 🔥 DIRECT ROUTES (No separate files needed)
-app.post('/api/contact', (req, res) => {
-  try {
-    const { name, email, message, phone } = req.body;
-    console.log('📧 CONTACT FORM:', { name, email, message, phone });
-    
-    res.json({
-      success: true,
-      message: '✅ Message sent to admin successfully!',
-      data: { name, email, phone }
-    });
-  } catch (error) {
-    console.error('Contact Error:', error);
-    res.status(500).json({ success: false, error: error.message });
+// 🔥 EMAIL TRANSPORTER SETUP (Gmail)
+const transporter = nodemailer.createTransporter({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,        // hamsoftwaresolution@gmail.com
+    pass: process.env.EMAIL_PASS         // ozib nmea cnop betk
   }
 });
 
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.error("❌ MongoDB Error:", err));
+
+// 🔥 CONTACT FORM WITH EMAIL
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, message, phone, subject } = req.body;
+    console.log('📧 CONTACT FORM:', { name, email, message, phone });
+    
+    // 🔥 SEND EMAIL TO ADMIN
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.ADMIN_EMAIL,  // Admin ko jayega
+      subject: `New Contact Form: ${name} (${subject || 'General Inquiry'})`,
+      html: `
+        <h2>🎉 New Contact Received!</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
+        <p><strong>Subject:</strong> ${subject || 'N/A'}</p>
+        <p><strong>Message:</strong></p>
+        <blockquote style="background: #f5f5f5; padding: 15px; border-left: 4px solid #007cba;">
+          ${message}
+        </blockquote>
+        <hr>
+        <small>Received: ${new Date().toLocaleString()}</small>
+      `
+    };
+
+    // Email bhejo
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Email sent to admin:', process.env.ADMIN_EMAIL);
+
+    res.json({
+      success: true,
+      message: '✅ Message sent to admin successfully! 📧',
+      data: { name, email, phone }
+    });
+
+  } catch (error) {
+    console.error('❌ Email Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to send email',
+      details: error.message 
+    });
+  }
+});
+
+// 🔥 ADMIN LOGIN (Same)
 app.post('/api/admin/login', (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('🔐 Admin Login:', email);
     
     if (email === process.env.ADMIN_EMAIL && 
         password === process.env.ADMIN_PASSWORD) {
@@ -429,82 +604,55 @@ app.post('/api/admin/login', (req, res) => {
         success: true,
         message: '🎉 Admin Login Successful!',
         token: 'ham-admin-jwt-2024',
-        admin: true,
-        dashboard: '/admin-dashboard.html'
+        admin: true
       });
     } else {
-      res.status(401).json({
-        success: false,
-        message: '❌ Invalid credentials'
-      });
+      res.status(401).json({ success: false, message: '❌ Invalid credentials' });
     }
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Login server error' });
+    res.status(500).json({ success: false, error: 'Login error' });
   }
 });
 
-// 🟢 Health Check API
+// 🟢 Health Check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'HAM Backend Live! 🚀',
+    email: '✅ Configured',
     mongodb: mongoose.connection.readyState === 1 ? 'Connected ✅' : 'Disconnected ❌',
-    apis: {
-      health: 'GET /api/health ✅',
-      contact: 'POST /api/contact ✅', 
-      login: 'POST /api/admin/login ✅'
-    },
-    frontend: 'https://hamsoftwaresolution-frontend-1.onrender.com'
+    apis: ['/api/contact', '/api/admin/login']
   });
 });
 
-// 🟢 WhatsApp Lead
-app.post('/api/send-whatsapp', async (req, res) => {
+// 🟢 Test Email Route
+app.post('/api/test-email', async (req, res) => {
   try {
-    const { phone, message } = req.body;
-    console.log(`📱 WhatsApp Lead: ${phone} - ${message}`);
-    
-    res.json({
-      success: true,
-      message: '✅ Lead received!',
-      phone
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: process.env.ADMIN_EMAIL,
+      subject: '🧪 Test Email - HAM Backend',
+      text: 'Email working perfectly! 🎉'
     });
+    res.json({ success: true, message: '✅ Test email sent!' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// 🟢 Root Route
+// Root + Other routes (same)
 app.get("/", (req, res) => {
   res.json({
-    message: "HAM Backend Running ✅",
-    apis: {
-      health: '/api/health',
-      contact: '/api/contact (POST)',
-      login: '/api/admin/login (POST)',
-      whatsapp: '/api/send-whatsapp (POST)'
-    },
-    admin: {
-      email: process.env.ADMIN_EMAIL,
-      login: '/api/admin/login'
-    }
+    message: "HAM Backend + EMAIL Ready ✅",
+    email: process.env.EMAIL_USER,
+    admin: process.env.ADMIN_EMAIL
   });
 });
 
-// 🟢 Favicon Fix
 app.get('/favicon.ico', (req, res) => res.status(204).end());
-
-// 🟢 404 Handler
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    error: 'API not found', 
-    available: ['/api/health', '/api/contact', '/api/admin/login'] 
-  });
-});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running: https://hamsoftwaresolution-backend.onrender.com:${PORT}`);
-  console.log(`✅ MongoDB: Connected`);
+  console.log(`🚀 Server: https://hamsoftwaresolution-backend.onrender.com:${PORT}`);
+  console.log(`✅ Email: ${process.env.EMAIL_USER}`);
   console.log(`✅ Admin: ${process.env.ADMIN_EMAIL}`);
-  console.log(`📱 Frontend: https://hamsoftwaresolution-frontend-1.onrender.com`);
 });
